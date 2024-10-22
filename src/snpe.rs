@@ -16,15 +16,17 @@ impl SNPE {
         unsafe {
             let snpe = snpe_bindings::SNPE::new(snpe_bindings::LIB).unwrap();
 
-            let library_version = snpe.Snpe_Util_GetLibraryVersion();
+            let versionHandle = snpe.Snpe_Util_GetLibraryVersion();
 
             version = Version {
-                major: snpe.Snpe_DlVersion_GetMajor(library_version) as u64,
-                minor: snpe.Snpe_DlVersion_GetMinor(library_version) as u64,
-                patch: snpe.Snpe_DlVersion_GetTeeny(library_version) as u64,
+                major: snpe.Snpe_DlVersion_GetMajor(versionHandle) as u64,
+                minor: snpe.Snpe_DlVersion_GetMinor(versionHandle) as u64,
+                patch: snpe.Snpe_DlVersion_GetTeeny(versionHandle) as u64,
                 pre: Prerelease::EMPTY,
                 build: BuildMetadata::EMPTY,
-            }
+            };
+
+            snpe.Snpe_DlVersion_Delete(versionHandle);
         }
 
         version
