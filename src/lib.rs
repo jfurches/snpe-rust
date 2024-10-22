@@ -1,1 +1,4 @@
-mod qnn_backend;
+#![allow(warnings)]
+
+mod qairt;
+mod snpe;

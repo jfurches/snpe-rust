@@ -7,3 +7,14 @@ edition = "2021"
 reqwest = { version = "0.12.8", features = ["blocking"] }
 bindgen = "0.70.1"
 unzip = "0.1.0"
+
+[dependencies]
+libloading = "0.8.5"
+num = "0.4.3"
+semver = "1.0.23"
+tensor-rs = "0.5.9"
+
+[features]
+cpu = []
+gpu = []
+default = ["cpu"]
