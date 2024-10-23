@@ -1,7 +1,12 @@
 [package]
-name = "snapdragon_qnn"
+name = "snpe"
 version = "0.1.0"
 edition = "2021"
+
+[lib]
+# We have to disable doctest because of bindgen, see
+# https://users.rust-lang.org/t/disable-doc-tests-for-bindgen-module/54639
+doctest = false
 
 [build-dependencies]
 reqwest = { version = "0.12.8", features = ["blocking"] }
@@ -13,8 +18,4 @@ libloading = "0.8.5"
 num = "0.4.3"
 semver = "1.0.23"
 tensor-rs = "0.5.9"
-
-[features]
-cpu = []
-gpu = []
-default = ["cpu"]
+thiserror = "1.0.64"

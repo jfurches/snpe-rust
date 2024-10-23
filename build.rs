@@ -93,7 +93,7 @@ fn linklibs(sdk_dir: &PathBuf) {
     };
 
     let native_lib_dir = sdk_dir.join("lib").join(platform_dir);
-    println!("cargo:rustc-env=LIB_DIR={}", native_lib_dir.display());
+    println!("cargo:rustc-env=SNPE_LIB_DIR={}", native_lib_dir.display());
 
     println!(
         "cargo:rustc-link-search=all={}",
@@ -184,6 +184,13 @@ fn generate_snpe_bindings(include_dir: &PathBuf) -> Result<(), BindgenError> {
         .clang_arg(include_arg)
         .header(snpe_dir.join("SNPE.h").to_str().unwrap())
         .header(snpe_dir.join("SNPEUtil.h").to_str().unwrap())
+        .header(
+            header_include_dir
+                .join("DlContainer")
+                .join("DlContainer.h")
+                .to_str()
+                .unwrap(),
+        )
         .dynamic_library_name("SNPE")
         .raw_line("#[allow(warnings, non_camel_case_types, non_snake_case)]");
 
