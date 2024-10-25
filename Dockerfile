@@ -30,6 +30,6 @@ RUN apt-get clean \
 ENV SNPE_ROOT=/snpe
 
 WORKDIR /workspace
-COPY entrypoint.sh /entrypoint.sh
+COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

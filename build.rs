@@ -79,7 +79,7 @@ fn setup_snapdragon_sdk() -> PathBuf {
 }
 
 fn setup_env_variables(sdk_dir: &PathBuf) -> Result<(), io::Error> {
-    let output = std::process::Command::new("./printenv.sh")
+    let output = std::process::Command::new("./scripts/printenv.sh")
         .arg(sdk_dir.to_str().unwrap())
         .output()?;
 
