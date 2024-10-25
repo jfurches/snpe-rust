@@ -9,6 +9,10 @@ pub mod snpe_bindings {
     include!(concat!(env!("OUT_DIR"), "/snpe_bindings.rs"));
 
     pub static LIB: &str = concat!(env!("SNPE_LIB_DIR"), "/libSNPE.so");
+
+    pub unsafe fn get() -> SNPE {
+        SNPE::new(LIB).unwrap()
+    }
 }
 
 /// Instance of the SNPE runtime
@@ -53,7 +57,7 @@ impl Snpe {
     fn get_input_tensor_cnames(&self) -> Result<Vec<CString>, &str> {
         let mut result: Vec<CString> = vec![];
 
-        let snpe = unsafe { snpe_bindings::SNPE::new(snpe_bindings::LIB).unwrap() };
+        let snpe = unsafe { snpe_bindings::get() };
         let inputNamesHandle = unsafe { snpe.Snpe_SNPE_GetInputTensorNames(self.handle) };
 
         if inputNamesHandle.is_null() {
@@ -81,7 +85,7 @@ impl Snpe {
 fn get_version() -> Version {
     let version: Version;
     unsafe {
-        let snpe = snpe_bindings::SNPE::new(snpe_bindings::LIB).unwrap();
+        let snpe = snpe_bindings::get();
 
         let versionHandle = snpe.Snpe_Util_GetLibraryVersion();
 
@@ -105,7 +109,7 @@ fn get_available_devices() -> Vec<Device> {
     let mut available: Vec<Device> = vec![];
 
     unsafe {
-        let snpe = snpe_bindings::SNPE::new(snpe_bindings::LIB).unwrap();
+        let snpe = snpe_bindings::get();
 
         for device in devices {
             if snpe.Snpe_Util_IsRuntimeAvailable(device.id()) != 0 {
@@ -155,7 +159,7 @@ impl Device {
     /// Returns if the device is available
     fn is_available(&self) -> bool {
         unsafe {
-            let snpe = snpe_bindings::SNPE::new(snpe_bindings::LIB).unwrap();
+            let snpe = snpe_bindings::get();
             snpe.Snpe_Util_IsRuntimeAvailable(self.id()) != 0
         }
     }

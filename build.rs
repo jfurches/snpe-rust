@@ -20,7 +20,7 @@ fn main() {
     // let sdk_dir = setup_snapdragon_sdk();
     let sdk_dir = PathBuf::from(std::env::var("SNPE_ROOT").unwrap_or("/snpe".to_string()));
     setup_env_variables(&sdk_dir).expect("Failed to set environment variables");
-    let platform_dir = linklibs(&sdk_dir);
+    let _platform_dir = linklibs(&sdk_dir);
 
     let include_dir = sdk_dir.join("include");
     generate_genie_bindings(&include_dir);

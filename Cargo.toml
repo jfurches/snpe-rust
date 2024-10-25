@@ -15,6 +15,7 @@ unzip = "0.1.0"
 
 [dependencies]
 libloading = "0.8.5"
+log = "0.4.22"
 num = "0.4.3"
 semver = "1.0.23"
 tch = { version = "0.18.0", optional = true }
