@@ -7,23 +7,23 @@ use super::snpe::snpe_bindings;
 
 /// Model instance for the SNPE runtime
 #[derive(Debug)]
-struct Model {
+struct DlContainer {
     /// File path to the .dlc model file
     path: PathBuf,
 
     /// Internal handle to the c object
-    _handle: snpe_bindings::Snpe_DlContainer_Handle_t,
+    handle: snpe_bindings::Snpe_DlContainer_Handle_t,
 }
 
-impl Model {
+impl DlContainer {
     /// Creates a new Model from the given path to a .dlc or .bin file
-    fn new<P>(path: P) -> Result<Model, DlContainerError>
+    fn open<P>(path: P) -> Result<DlContainer, DlContainerError>
     where
         P: AsRef<str>,
     {
         let handle: snpe_bindings::Snpe_DlContainer_Handle_t;
         let c_path = CString::new(path.as_ref()).unwrap();
-        let model: Model;
+        let model: DlContainer;
         let pathbuf = PathBuf::from(path.as_ref());
 
         unsafe {
@@ -38,9 +38,9 @@ impl Model {
                 return Err(DlContainerError::from_error(code, msg_str));
             }
 
-            model = Model {
+            model = DlContainer {
                 path: pathbuf,
-                _handle: handle,
+                handle: handle,
             };
         }
 
@@ -48,14 +48,14 @@ impl Model {
     }
 }
 
-impl Drop for Model {
+impl Drop for DlContainer {
     fn drop(&mut self) {
         // Clean up the dlcontainer handle
         unsafe {
             let snpe = snpe_bindings::SNPE::new(snpe_bindings::LIB).unwrap();
 
-            if !self._handle.is_null() {
-                snpe.Snpe_DlContainer_Delete(self._handle);
+            if !self.handle.is_null() {
+                snpe.Snpe_DlContainer_Delete(self.handle);
             }
         }
     }
@@ -67,15 +67,19 @@ mod tests {
 
     #[test]
     fn does_not_exist() {
-        let model = super::Model::new("does_not_exist.dlc");
+        let model = super::DlContainer::open("does_not_exist.dlc");
         assert!(matches!(model, Err(DlContainerError::ReadFailure(_))))
     }
 
     #[test]
     fn dummy_file() {
-        let model = super::Model::new("test/data/dummy.dlc");
+        let model = super::DlContainer::open("test/data/dummy.dlc");
         assert!(matches!(model, Err(DlContainerError::ReadFailure(_))))
     }
 
-    // todo: convert one of the models in the sdk and try loading
+    #[test]
+    fn resnet50() {
+        let model = super::DlContainer::open("test/data/resnet50.dlc");
+        assert!(model.is_ok());
+    }
 }

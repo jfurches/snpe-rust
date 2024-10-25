@@ -11,14 +11,16 @@ extern crate unzip;
 use bindgen::BindgenError;
 use std::collections::HashMap;
 use std::fs::{DirEntry, OpenOptions};
-use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::io::{self, BufRead, BufReader, BufWriter, Write};
 use std::path::PathBuf;
 use std::{env, fs};
 use unzip::Unzipper;
 
 fn main() {
-    let sdk_dir = setup_snapdragon_sdk();
-    linklibs(&sdk_dir);
+    // let sdk_dir = setup_snapdragon_sdk();
+    let sdk_dir = PathBuf::from(std::env::var("SNPE_ROOT").unwrap_or("/snpe".to_string()));
+    setup_env_variables(&sdk_dir).expect("Failed to set environment variables");
+    let platform_dir = linklibs(&sdk_dir);
 
     let include_dir = sdk_dir.join("include");
     generate_genie_bindings(&include_dir);
@@ -72,10 +74,43 @@ fn setup_snapdragon_sdk() -> PathBuf {
 
     println!("Using Qualcomm Snapdragon SDK v{}", version);
     let sdk_dir = sdk_dir.join(version);
+
     sdk_dir
 }
 
-fn linklibs(sdk_dir: &PathBuf) {
+fn setup_env_variables(sdk_dir: &PathBuf) -> Result<(), io::Error> {
+    let output = std::process::Command::new("./printenv.sh")
+        .arg(sdk_dir.to_str().unwrap())
+        .output()?;
+
+    if !output.status.success() {
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            format!(
+                "Failed to run printenv.sh: {}",
+                String::from_utf8_lossy(&output.stderr)
+            ),
+        ));
+    }
+
+    // Capture the output
+    let output_str = String::from_utf8_lossy(&output.stdout);
+    let desired_variables = vec!["PYTHONPATH", "LD_LIBRARY_PATH", "SNPE_ROOT", "PATH"];
+
+    // Parse and set environment variables
+    for line in output_str.lines() {
+        if let Some((key, value)) = line.split_once('=') {
+            if desired_variables.contains(&key) {
+                env::set_var(key, value);
+                println!("cargo:rustc-env={}={}", key, value);
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn linklibs(sdk_dir: &PathBuf) -> &str {
     let target = env::var("TARGET").unwrap();
     let platform_dir = match target.as_str() {
         // Windows on x86 and arm
@@ -112,6 +147,8 @@ fn linklibs(sdk_dir: &PathBuf) {
             }
         }
     }
+
+    platform_dir
 }
 
 /// Takes a path like /path/to/libLibrary.so and returns the library name (Library)

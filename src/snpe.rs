@@ -1,8 +1,9 @@
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::path::PathBuf;
 
 use libloading::Library;
 use semver::{BuildMetadata, Prerelease, Version};
+use tensor_rs::tensor::Tensor;
 
 pub mod snpe_bindings {
     include!(concat!(env!("OUT_DIR"), "/snpe_bindings.rs"));
@@ -11,12 +12,68 @@ pub mod snpe_bindings {
 }
 
 /// Instance of the SNPE runtime
-struct Snpe {}
+struct Snpe {
+    handle: snpe_bindings::Snpe_SNPE_Handle_t,
+}
 
 impl Snpe {
     /// Creates a new SNPE instance
     fn new() -> Self {
-        Self {}
+        // todo: implement
+
+        Self {
+            handle: std::ptr::null_mut(),
+        }
+    }
+
+    // fn get_input_tensors(&self) -> Result<Vec<TensorInfo>, &str> {
+    //     let snpe = unsafe { snpe_bindings::SNPE::new(snpe_bindings::LIB).unwrap() };
+
+    //     let cnames = self.get_input_tensor_cnames()?;
+    //     let friendly_names = self.get_input_tensor_names()?;
+    //     let result: Vec<TensorInfo> = vec![];
+
+    //     for i in 0..cnames.len() {
+    //         snpe.Snpe_GetIn
+    //     }
+    // }
+
+    /// Returns the list of names of input tensors to the network
+    fn get_input_tensor_names(&self) -> Result<Vec<String>, &str> {
+        let names = self
+            .get_input_tensor_cnames()?
+            .into_iter()
+            .map(|c| c.to_string_lossy().to_string())
+            .collect();
+
+        Ok(names)
+    }
+
+    /// Returns a list of owned input tensor names
+    fn get_input_tensor_cnames(&self) -> Result<Vec<CString>, &str> {
+        let mut result: Vec<CString> = vec![];
+
+        let snpe = unsafe { snpe_bindings::SNPE::new(snpe_bindings::LIB).unwrap() };
+        let inputNamesHandle = unsafe { snpe.Snpe_SNPE_GetInputTensorNames(self.handle) };
+
+        if inputNamesHandle.is_null() {
+            return Err("Failed to get input tensor names");
+        }
+
+        let n = unsafe { snpe.Snpe_StringList_Size(inputNamesHandle) };
+        for i in 0..n {
+            let cstr = unsafe { CStr::from_ptr(snpe.Snpe_StringList_At(inputNamesHandle, i)) };
+
+            // Copy the string into rust
+            result.push(cstr.to_owned());
+        }
+
+        // Free the string list in C
+        unsafe {
+            snpe.Snpe_StringList_Delete(inputNamesHandle);
+        }
+
+        Ok(result)
     }
 }
 
@@ -102,6 +159,11 @@ impl Device {
             snpe.Snpe_Util_IsRuntimeAvailable(self.id()) != 0
         }
     }
+}
+
+struct TensorInfo {
+    name: String,
+    shape: Vec<u64>,
 }
 
 #[cfg(test)]
